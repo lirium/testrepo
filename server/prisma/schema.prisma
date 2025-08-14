@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  fullName      String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  documents     Document[]    @relation("OwnerDocuments")
+  permissions   Permission[]
+  changeLogs    ChangeLog[]
+  inviteLinks   InviteLink[]  @relation("CreatorInviteLinks")
+}
+
+model Document {
+  id            String        @id @default(cuid())
+  title         String
+  content       String        @default("{}")
+  ownerId       String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  owner         User          @relation("OwnerDocuments", fields: [ownerId], references: [id])
+  permissions   Permission[]
+  changeLogs    ChangeLog[]
+  inviteLinks   InviteLink[]
+  snapshots     Snapshot[]
+
+  @@index([ownerId])
+}
+
+model Permission {
+  id            String    @id @default(cuid())
+  userId        String
+  documentId    String
+  canView       Boolean   @default(true)
+  canEdit       Boolean   @default(false)
+  canPrint      Boolean   @default(false)
+  canCopy       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id])
+  document      Document  @relation(fields: [documentId], references: [id])
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+}
+
+model InviteLink {
+  id            String    @id @default(cuid())
+  token         String    @unique
+  documentId    String
+  creatorId     String
+  canView       Boolean   @default(true)
+  canEdit       Boolean   @default(false)
+  canPrint      Boolean   @default(false)
+  canCopy       Boolean   @default(false)
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  document      Document  @relation(fields: [documentId], references: [id])
+  creator       User      @relation("CreatorInviteLinks", fields: [creatorId], references: [id])
+
+  @@index([documentId])
+}
+
+model ChangeLog {
+  id            String    @id @default(cuid())
+  documentId    String
+  userId        String?
+  changeType    String
+  diff          String
+  createdAt     DateTime  @default(now())
+
+  document      Document  @relation(fields: [documentId], references: [id])
+  user          User?     @relation(fields: [userId], references: [id])
+
+  @@index([documentId])
+}
+
+model Snapshot {
+  id            String    @id @default(cuid())
+  documentId    String
+  content       String
+  label         String?
+  createdAt     DateTime  @default(now())
+
+  document      Document  @relation(fields: [documentId], references: [id])
+
+  @@index([documentId])
+}
