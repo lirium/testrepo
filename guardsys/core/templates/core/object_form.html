@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% if object %}Редактировать{% else %}Создать{% endif %} объект</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 1rem; }
+        .btn { padding: 6px 10px; border: 1px solid #888; background: #f9f9f9; border-radius: 6px; text-decoration: none; color: #000; }
+        form { max-width: 640px; display: grid; gap: 10px; }
+        input, select, textarea { padding: 6px 8px; }
+        label { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <a class="btn" href="{% url 'object_list' %}">← К списку</a>
+    <h1>{% if object %}Редактировать{% else %}Создать{% endif %} объект</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <label for="periodicity_id">Периодичность ТО</label>
+        <select name="periodicity_id" id="periodicity_id">
+            <option value="">— выбрать —</option>
+            {% for p in periodicities %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn" type="submit">Сохранить</button>
+    </form>
+</body>
+</html>
+

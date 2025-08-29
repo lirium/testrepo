@@ -1,0 +1,62 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Объекты охраны</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+        .overdue { color: #b00020; font-weight: 600; }
+        .ok { color: #007c3d; }
+        .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .toolbar input[type=text] { flex: 1; padding: 6px 8px; }
+        .btn { padding: 6px 10px; border: 1px solid #888; background: #f9f9f9; border-radius: 6px; text-decoration: none; color: #000; }
+    </style>
+    </head>
+<body>
+    <h1>Объекты охраны</h1>
+    <div class="toolbar">
+        <form method="get" style="display:flex; gap:8px; width:100%">
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Поиск по названию, адресу, организации" />
+            <label><input type="checkbox" name="my" value="1" {% if request.GET.my == '1' %}checked{% endif %}/> Мои</label>
+            <label><input type="checkbox" name="overdue" value="1" {% if request.GET.overdue == '1' %}checked{% endif %}/> Просроченные</label>
+            <button class="btn" type="submit">Фильтровать</button>
+            <a class="btn" href="{% url 'object_create' %}">+ Создать объект</a>
+        </form>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название / Адрес</th>
+                <th>Ответственные</th>
+                <th>След. ТО</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objects %}
+                {% with m=obj.maintenances.first %}
+                <tr>
+                    <td>{{ obj.id }}</td>
+                    <td><a href="{% url 'object_detail' obj.id %}">{{ obj.name }}</a><br/><small>{{ obj.address }}</small></td>
+                    <td>
+                        {{ obj.main_responsible.get_full_name|default:obj.main_responsible.username }}{% if obj.deputy_responsible %}, {{ obj.deputy_responsible.get_full_name|default:obj.deputy_responsible.username }}{% endif %}
+                    </td>
+                    <td>{% if m %}{{ m.next_due_at|date:"d.m.Y" }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if m and m.is_overdue %}<span class="overdue">● Просрочено</span>{% else %}<span class="ok">○ В норме</span>{% endif %}
+                    </td>
+                </tr>
+                {% endwith %}
+            {% empty %}
+                <tr><td colspan="5">Нет записей</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
